@@ -73,7 +73,7 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
   const setStatus = async (status: string) => {
     if (status === "completed") return setConfirmComplete(true);
     if (status === "blocked") return setBlockOpen(true);
-    const { error } = await supabase.from("milestones").update({ status }).eq("id", milestone.id);
+    const { error } = await supabase.from("milestones").update({ status: status as any }).eq("id", milestone.id);
     if (error) return toast.error(error.message);
     invalidate();
   };
