@@ -39,7 +39,9 @@ export default function FocusMode() {
   }, [deps]);
 
   const pinned = milestones.find((m) => m.focus_pinned);
-  const focus = pinned ?? pickNextAction(milestones as any, depsByMs, todayISO);
+  const focus: any = pinned ?? (pickNextAction(milestones as any, depsByMs, todayISO)
+    ? milestones.find((m) => m.id === (pickNextAction(milestones as any, depsByMs, todayISO) as any).id)
+    : null);
   const { data: evidence = [] } = useEvidence(workspace?.id, focus?.id);
 
   const myDeps = focus ? (depsByMs[focus.id] || []).map((id) => milestones.find((m) => m.id === id)).filter(Boolean) : [];
