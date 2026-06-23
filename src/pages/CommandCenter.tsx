@@ -9,6 +9,8 @@ import {
   workstreamProgress,
 } from "@/lib/calculations";
 import { fmtDate, fmtRelative, STATUS_LABEL, PRIORITY_LABEL } from "@/lib/format";
+import { resolveMilestoneContent, workstreamLabel, GLOSSARY } from "@/lib/milestoneContent";
+import { InfoHint } from "@/components/clarity";
 import { differenceInDays, format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +54,26 @@ export default function CommandCenter() {
     () => pickNextAction(milestones as any, depsByMilestone, todayISO),
     [milestones, depsByMilestone, todayISO],
   );
+  const nextContent = next ? resolveMilestoneContent(next) : null;
+  const ht = (m: Parameters<typeof resolveMilestoneContent>[0]) => resolveMilestoneContent(m).humanTitle;
+
+  // Explica en lenguaje normal por qué este paso va primero.
+  const nextReason = useMemo(() => {
+    if (!next) return "";
+    if (next.focus_pinned) return "Lo fijaste como foco principal.";
+    const bits: string[] = [];
+    if (next.is_launch_gate) bits.push("es un Launch Gate");
+    if (next.priority === "P0") bits.push("es prioridad P0");
+    if (next.status === "in_progress") bits.push("ya está en curso");
+    if (next.due_date) {
+      const d = differenceInDays(parseISO(next.due_date), new Date());
+      if (d < 0) bits.push("está vencido");
+      else if (d <= 7) bits.push("vence esta semana");
+    }
+    return bits.length
+      ? `Va primero porque ${bits.join(", ")}, y no tiene dependencias pendientes.`
+      : "Va primero porque no tiene dependencias pendientes y es el de mayor prioridad disponible.";
+  }, [next]);
 
   const global = globalProgress(workstreams as any, milestonesByWs as any);
   const ready = launchReadiness(milestones as any);
@@ -90,9 +112,10 @@ export default function CommandCenter() {
             Semana {thisWeekNum} de 8 · {daysLeft} días restantes hasta {fmtDate(workspace?.target_date)}
           </p>
         </div>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs inline-flex items-center gap-1">
           WIP {inProgressCount} / {workspace?.wip_limit ?? 3}
-          {inProgressCount > (workspace?.wip_limit ?? 3) && <span className="ml-2 text-destructive">excedido</span>}
+          <InfoHint text={GLOSSARY["WIP Limit"]} />
+          {inProgressCount > (workspace?.wip_limit ?? 3) && <span className="ml-1 text-destructive">excedido</span>}
         </Badge>
       </header>
 
@@ -105,15 +128,25 @@ export default function CommandCenter() {
                 <Sparkles className="h-3.5 w-3.5" />
                 Siguiente paso recomendado
               </div>
-              <h2 className="font-display text-2xl mb-3">{next.title}</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                <span className="font-medium text-foreground">Por qué importa: </span>
-                {(next as any).why_it_matters}
+              <h2 className="font-display text-2xl mb-1 leading-tight">{nextContent?.humanTitle}</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                {next.code} · {workstreamLabel(workstreams.find((w) => w.id === next.workstream_id))}
               </p>
-              {Array.isArray((next as any).definition_of_done) && (
+              {nextContent?.shortDescription && <p className="text-sm mb-3">{nextContent.shortDescription}</p>}
+              <p className="text-sm text-muted-foreground mb-4">
+                <span className="font-medium text-foreground">Por qué va primero: </span>
+                {nextReason}
+              </p>
+              {nextContent?.expectedOutput && (
+                <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Resultado esperado</p>
+                  <p className="text-sm">{nextContent.expectedOutput}</p>
+                </div>
+              )}
+              {nextContent && nextContent.successCriteria.length > 0 && (
                 <div className="space-y-1.5 mb-4">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Definition of Done</p>
-                  {((next as any).definition_of_done as string[]).slice(0, 3).map((d, i) => (
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Cómo se ve terminado</p>
+                  {nextContent.successCriteria.slice(0, 3).map((d, i) => (
                     <div key={i} className="flex gap-2 text-sm">
                       <span className="text-primary">·</span>
                       <span>{d}</span>
@@ -166,14 +199,16 @@ export default function CommandCenter() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Dependencias</p>
-                <p className="text-sm">
-                  {(depsByMilestone[next.id] || []).length === 0
-                    ? "Ninguna"
-                    : (depsByMilestone[next.id] || [])
-                        .map((id) => milestones.find((m) => m.id === id)?.code)
-                        .filter(Boolean)
-                        .join(", ")}
-                </p>
+                {(depsByMilestone[next.id] || []).length === 0 ? (
+                  <p className="text-sm">Ninguna — puedes empezar ya</p>
+                ) : (
+                  <ul className="text-sm space-y-1 mt-0.5">
+                    {(depsByMilestone[next.id] || []).map((id) => {
+                      const dm = milestones.find((m) => m.id === id);
+                      return dm ? <li key={id}>{ht(dm)}</li> : null;
+                    })}
+                  </ul>
+                )}
               </div>
               <div className="pt-2">
                 <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
@@ -212,9 +247,9 @@ export default function CommandCenter() {
               const p = workstreamProgress((milestonesByWs[ws.id] || []) as any);
               return (
                 <div key={ws.id}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium">{ws.code} · {ws.name}</span>
-                    <span className="text-muted-foreground">{p}%</span>
+                  <div className="flex justify-between text-sm mb-1 gap-2">
+                    <span className="font-medium truncate" title={`${ws.code} · ${ws.name}`}>{workstreamLabel(ws)}</span>
+                    <span className="text-muted-foreground shrink-0">{p}%</span>
                   </div>
                   <Progress value={p} />
                 </div>
@@ -254,9 +289,10 @@ export default function CommandCenter() {
               {thisWeek.map((m) => (
                 <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-3 rounded-lg border hover:border-primary/40 hover:bg-muted/40 transition">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium">{m.code} · {m.title}</span>
+                    <span className="text-sm font-medium">{ht(m)}</span>
                     <Badge variant="outline" className="text-xs shrink-0">{STATUS_LABEL[m.status]}</Badge>
                   </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{m.code} · Semana {m.week_target}</p>
                   <Progress value={m.progress} className="mt-2 h-1.5" />
                 </button>
               ))}
@@ -272,7 +308,8 @@ export default function CommandCenter() {
             <div className="space-y-2">
               {blocked.slice(0, 5).map((m) => (
                 <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-3 rounded-lg border border-destructive/30 bg-destructive/5 hover:bg-destructive/10">
-                  <div className="text-sm font-medium">{m.code} · {m.title}</div>
+                  <div className="text-sm font-medium">{ht(m)}</div>
+                  <div className="text-[11px] text-muted-foreground">{m.code}</div>
                   <div className="text-xs text-muted-foreground mt-1">{m.blocked_reason || "Sin razón registrada"}</div>
                   <div className="text-xs text-muted-foreground mt-1">{fmtRelative(m.blocked_at)}</div>
                 </button>
@@ -294,10 +331,10 @@ export default function CommandCenter() {
                 return (
                   <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-3 rounded-lg border hover:border-primary/40 hover:bg-muted/40">
                     <div className="flex justify-between items-start gap-2">
-                      <span className="text-sm font-medium">{m.code} · {m.title}</span>
-                      <span className={`h-2 w-2 rounded-full ${risk === "red" ? "bg-destructive" : risk === "amber" ? "bg-gold" : "bg-success"}`} />
+                      <span className="text-sm font-medium">{ht(m)}</span>
+                      <span className={`h-2 w-2 rounded-full shrink-0 mt-1 ${risk === "red" ? "bg-destructive" : risk === "amber" ? "bg-gold" : "bg-success"}`} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{fmtDate(m.due_date)} · Semana {m.week_target}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{m.code} · {fmtDate(m.due_date)} · Semana {m.week_target}</p>
                   </button>
                 );
               })}

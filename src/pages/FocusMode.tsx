@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { useMilestones, useDependencies, useEvidence } from "@/hooks/useData";
+import { useMilestones, useDependencies, useEvidence, useWorkstreams } from "@/hooks/useData";
+import { resolveMilestoneContent, workstreamLabel } from "@/lib/milestoneContent";
 import { pickNextAction } from "@/lib/calculations";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function FocusMode() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: milestones = [] } = useMilestones(workspace?.id);
+  const { data: workstreams = [] } = useWorkstreams(workspace?.id);
   const { data: deps = [] } = useDependencies(workspace?.id);
   const [draftProgress, setDraftProgress] = useState<number | null>(null);
   const [nextAction, setNextAction] = useState("");
@@ -56,6 +58,9 @@ export default function FocusMode() {
       </div>
     );
   }
+
+  const fc = resolveMilestoneContent(focus);
+  const fws = workstreams.find((w) => w.id === focus.workstream_id);
 
   const inv = () => {
     qc.invalidateQueries({ queryKey: ["milestones"] });
@@ -128,7 +133,9 @@ export default function FocusMode() {
 
       <header>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Foco actual</p>
-        <h1 className="font-display text-4xl mt-2">{focus.title}</h1>
+        <h1 className="font-display text-4xl mt-2 leading-tight">{fc.humanTitle}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{focus.code} · {workstreamLabel(fws)}</p>
+        {fc.shortDescription && <p className="text-base mt-3">{fc.shortDescription}</p>}
       </header>
 
       <section className="space-y-2">
@@ -136,8 +143,15 @@ export default function FocusMode() {
         <p className="text-base">{focus.why_it_matters}</p>
       </section>
 
+      {fc.expectedOutput && (
+        <section className="space-y-2">
+          <h3 className="text-sm uppercase tracking-wider text-muted-foreground">Resultado esperado</h3>
+          <p className="text-base">{fc.expectedOutput}</p>
+        </section>
+      )}
+
       <section className="space-y-3">
-        <h3 className="text-sm uppercase tracking-wider text-muted-foreground">Definition of Done</h3>
+        <h3 className="text-sm uppercase tracking-wider text-muted-foreground">Cómo se ve terminado</h3>
         <ul className="space-y-2">
           {dod.slice(0, 3).map((d, i) => (
             <li key={i} className="flex gap-3 text-base">
@@ -153,7 +167,7 @@ export default function FocusMode() {
           {myDeps.length === 0 ? <p className="text-sm">Sin dependencias</p> : (
             <ul className="text-sm space-y-1">
               {myDeps.map((d: any) => (
-                <li key={d.id} className="flex justify-between"><span>{d.code} {d.title}</span><span className="text-muted-foreground">{STATUS_LABEL[d.status]}</span></li>
+                <li key={d.id} className="flex justify-between gap-2"><span>{d.code} · {resolveMilestoneContent(d).humanTitle}</span><span className="text-muted-foreground shrink-0">{STATUS_LABEL[d.status]}</span></li>
               ))}
             </ul>
           )}
@@ -213,7 +227,7 @@ export default function FocusMode() {
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
           <ul className="text-sm space-y-1">
-            {after.map((m: any) => <li key={m.id}>{m.code} · {m.title}</li>)}
+            {after.map((m: any) => <li key={m.id}>{resolveMilestoneContent(m).humanTitle}</li>)}
           </ul>
         </CollapsibleContent>
       </Collapsible>
@@ -223,7 +237,7 @@ export default function FocusMode() {
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
           <ul className="text-sm space-y-1">
-            {noNow.map((m: any) => <li key={m.id}>{m.code} · {m.title}</li>)}
+            {noNow.map((m: any) => <li key={m.id}>{resolveMilestoneContent(m).humanTitle}</li>)}
           </ul>
         </CollapsibleContent>
       </Collapsible>

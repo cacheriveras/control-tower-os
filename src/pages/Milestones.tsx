@@ -8,8 +8,10 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Search, Plus } from "lucide-react";
-import { STATUS_LABEL, PRIORITY_LABEL, fmtDate } from "@/lib/format";
+import { STATUS_LABEL } from "@/lib/format";
 import { milestoneRisk } from "@/lib/calculations";
+import { resolveMilestoneContent } from "@/lib/milestoneContent";
+import { ExpandableText, MilestoneMeta } from "@/components/clarity";
 import { MilestoneDrawer } from "@/components/MilestoneDrawer";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -32,11 +34,16 @@ export default function Milestones() {
   const [fGate, setFGate] = useState("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [view, setView] = useState<"explica" | "compacta">("explica"); // explicativa por defecto
 
   const wsById = useMemo(() => Object.fromEntries(workstreams.map((w) => [w.id, w])), [workstreams]);
 
   const filtered = useMemo(() => milestones.filter((m) => {
-    if (search && !`${m.code} ${m.title}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search) {
+      const c = resolveMilestoneContent(m);
+      const hay = `${m.code} ${m.title} ${c.humanTitle} ${c.shortDescription}`.toLowerCase();
+      if (!hay.includes(search.toLowerCase())) return false;
+    }
     if (fStatus !== "all" && m.status !== fStatus) return false;
     if (fWs !== "all" && m.workstream_id !== fWs) return false;
     if (fWeek !== "all" && m.week_target !== Number(fWeek)) return false;
@@ -100,32 +107,86 @@ export default function Milestones() {
       </div>
 
       <Tabs defaultValue="list">
-        <TabsList>
-          <TabsTrigger value="list">Lista</TabsTrigger>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <TabsList>
+            <TabsTrigger value="list">Lista</TabsTrigger>
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+          </TabsList>
+          <div className="inline-flex rounded-lg border p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setView("explica")}
+              className={`px-3 py-1 rounded-md transition ${view === "explica" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Vista explicativa
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("compacta")}
+              className={`px-3 py-1 rounded-md transition ${view === "compacta" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Vista compacta
+            </button>
+          </div>
+        </div>
 
         <TabsContent value="list" className="mt-4">
-          <div className="surface-card divide-y">
+          <div className={view === "explica" ? "grid gap-3 md:grid-cols-2" : "surface-card divide-y"}>
             {filtered.length === 0 && <div className="p-6 text-sm text-muted-foreground text-center">Sin resultados con esos filtros.</div>}
             {filtered.map((m) => {
               const risk = milestoneRisk(m as any);
-              return (
-                <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-4 hover:bg-muted/40 transition flex items-center gap-4">
-                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${risk === "red" ? "bg-destructive" : risk === "amber" ? "bg-gold" : "bg-success"}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium">{m.code} · {m.title}</span>
-                      {m.is_launch_gate && <Badge className="bg-gold text-gold-foreground text-[10px]">Gate</Badge>}
-                      <Badge variant="outline" className="text-[10px]">{m.priority}</Badge>
+              const c = resolveMilestoneContent(m);
+              const dot = `h-2.5 w-2.5 rounded-full shrink-0 ${risk === "red" ? "bg-destructive" : risk === "amber" ? "bg-gold" : "bg-success"}`;
+
+              if (view === "compacta") {
+                return (
+                  <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-4 hover:bg-muted/40 transition flex items-center gap-4">
+                    <span className={dot} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">{c.humanTitle}</span>
+                        {m.is_launch_gate && <Badge className="bg-gold text-gold-foreground text-[10px]">Gate</Badge>}
+                        <Badge variant="outline" className="text-[10px]">{m.priority}</Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {m.code} · {wsById[m.workstream_id]?.code} · Semana {m.week_target} · {STATUS_LABEL[m.status]}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {wsById[m.workstream_id]?.code} · Semana {m.week_target} · {fmtDate(m.due_date)} · {STATUS_LABEL[m.status]}
+                    <div className="w-28 shrink-0">
+                      <Progress value={m.progress} className="h-1.5" />
+                      <p className="text-[10px] text-muted-foreground text-right mt-0.5">{m.progress}%</p>
+                    </div>
+                  </button>
+                );
+              }
+
+              // Vista explicativa (default)
+              return (
+                <button key={m.id} onClick={() => setOpenId(m.id)} className="surface-card text-left p-4 hover:border-primary/40 transition flex flex-col gap-2">
+                  <div className="flex items-start gap-3">
+                    <span className={`${dot} mt-1.5`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-medium leading-snug">{c.humanTitle}</h3>
+                        <div className="flex gap-1 shrink-0">
+                          {m.is_launch_gate && <Badge className="bg-gold text-gold-foreground text-[10px]">Gate</Badge>}
+                          <Badge variant="outline" className="text-[10px]">{m.priority}</Badge>
+                        </div>
+                      </div>
+                      <MilestoneMeta className="mt-1" code={m.code} workstream={wsById[m.workstream_id]} week={m.week_target} isGate={false} />
                     </div>
                   </div>
-                  <div className="w-32 shrink-0">
-                    <Progress value={m.progress} className="h-1.5" />
-                    <p className="text-[10px] text-muted-foreground text-right mt-0.5">{m.progress}%</p>
+                  <ExpandableText text={c.shortDescription} className="text-sm text-muted-foreground" />
+                  {c.expectedOutput && (
+                    <p className="text-xs"><span className="text-muted-foreground">Resultado esperado: </span>{c.expectedOutput}</p>
+                  )}
+                  {c.unlocksDecision && (
+                    <p className="text-xs"><span className="text-muted-foreground">Desbloquea: </span>{c.unlocksDecision}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-[10px] shrink-0">{STATUS_LABEL[m.status]}</Badge>
+                    <Progress value={m.progress} className="h-1.5 flex-1" />
+                    <span className="text-[10px] text-muted-foreground shrink-0">{m.progress}%</span>
                   </div>
                 </button>
               );
@@ -139,13 +200,19 @@ export default function Milestones() {
               <div key={s.v} className="surface-card p-3">
                 <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{s.l} ({filtered.filter((m) => m.status === s.v).length})</h4>
                 <div className="space-y-2">
-                  {filtered.filter((m) => m.status === s.v).map((m) => (
-                    <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-2 rounded border bg-card hover:border-primary/40">
-                      <p className="text-xs font-medium">{m.code}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{m.title}</p>
-                      <Progress value={m.progress} className="mt-1 h-1" />
-                    </button>
-                  ))}
+                  {filtered.filter((m) => m.status === s.v).map((m) => {
+                    const c = resolveMilestoneContent(m);
+                    return (
+                      <button key={m.id} onClick={() => setOpenId(m.id)} className="w-full text-left p-2 rounded border bg-card hover:border-primary/40">
+                        <p className="text-xs font-medium leading-snug line-clamp-2">{c.humanTitle}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{m.code} · S{m.week_target}</p>
+                        {view === "explica" && c.shortDescription && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">{c.shortDescription}</p>
+                        )}
+                        <Progress value={m.progress} className="mt-1 h-1" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}

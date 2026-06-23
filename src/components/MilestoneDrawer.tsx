@@ -13,8 +13,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMilestones, useDependencies, useComments, useEvidence, useActivityLog } from "@/hooks/useData";
+import { useMilestones, useDependencies, useComments, useEvidence, useActivityLog, useWorkstreams } from "@/hooks/useData";
 import { fmtDate, fmtRelative, STATUS_LABEL, PRIORITY_LABEL } from "@/lib/format";
+import { resolveMilestoneContent, workstreamLabel, GLOSSARY } from "@/lib/milestoneContent";
+import { InfoHint } from "@/components/clarity";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLink, Link2, Trash2 } from "lucide-react";
@@ -24,6 +26,7 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: milestones = [] } = useMilestones(workspace?.id);
+  const { data: workstreams = [] } = useWorkstreams(workspace?.id);
   const { data: deps = [] } = useDependencies(workspace?.id);
   const { data: comments = [] } = useComments(workspace?.id, milestoneId ?? undefined);
   const { data: evidence = [] } = useEvidence(workspace?.id, milestoneId ?? undefined);
@@ -51,6 +54,8 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
     );
   }
 
+  const ws = workstreams.find((w) => w.id === milestone.workstream_id);
+  const content = resolveMilestoneContent(milestone);
   const myDeps = deps.filter((d) => d.milestone_id === milestone.id).map((d) => milestones.find((m) => m.id === d.depends_on_milestone_id)).filter(Boolean);
   const dependents = deps.filter((d) => d.depends_on_milestone_id === milestone.id).map((d) => milestones.find((m) => m.id === d.milestone_id)).filter(Boolean);
   const myActivity = activity.filter((a) => a.entity_id === milestone.id);
@@ -129,11 +134,48 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline">{milestone.code}</Badge>
             <Badge variant="outline">Semana {milestone.week_target}</Badge>
-            {milestone.is_launch_gate && <Badge className="bg-gold text-gold-foreground">Launch Gate</Badge>}
+            {milestone.is_launch_gate && (
+              <span className="inline-flex items-center gap-1">
+                <Badge className="bg-gold text-gold-foreground">Launch Gate</Badge>
+                <InfoHint text={GLOSSARY["Launch Gate"]} />
+              </span>
+            )}
             <Badge variant="outline">{PRIORITY_LABEL[milestone.priority]}</Badge>
           </div>
-          <SheetTitle className="font-display text-2xl">{milestone.title}</SheetTitle>
+          <SheetTitle className="font-display text-2xl leading-tight">{content.humanTitle}</SheetTitle>
+          <p className="text-xs text-muted-foreground">{milestone.code} · {workstreamLabel(ws)}</p>
         </SheetHeader>
+
+        {/* En palabras simples — siempre visible, sin importar la pestaña */}
+        <div className="mt-4 rounded-xl border bg-muted/30 p-4 space-y-3">
+          <h3 className="text-sm font-semibold">En palabras simples</h3>
+          {content.simpleExplanation && <p className="text-sm leading-relaxed">{content.simpleExplanation}</p>}
+          <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Por qué importa</p>
+              <p>{milestone.why_it_matters || content.shortDescription || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Qué decisión desbloquea</p>
+              <p>{content.unlocksDecision || "—"}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Resultado esperado */}
+        {(content.expectedOutput || content.examples.length > 0) && (
+          <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+            <h3 className="text-sm font-semibold">Resultado esperado</h3>
+            {content.expectedOutput && <p className="text-sm leading-relaxed">{content.expectedOutput}</p>}
+            {content.examples.length > 0 && (
+              <ul className="text-sm space-y-1 pt-1">
+                {content.examples.map((ex, i) => (
+                  <li key={i} className="flex gap-2"><span className="text-primary">·</span><span>{ex}</span></li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <Tabs defaultValue="overview" className="mt-4">
           <TabsList className="grid grid-cols-6">
@@ -148,7 +190,7 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
           <TabsContent value="overview" className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Estado</Label>
+                <Label className="flex items-center gap-1">Estado <InfoHint text={GLOSSARY["En validación"]} /></Label>
                 <Select value={draft.status} onValueChange={(v) => setStatus(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -224,12 +266,12 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
 
           <TabsContent value="deps" className="space-y-4 mt-4">
             <div>
-              <h4 className="text-sm font-medium mb-2">Depende de</h4>
+              <h4 className="text-sm font-medium mb-2 flex items-center gap-1">Depende de <InfoHint text={GLOSSARY["Dependencia"]} /></h4>
               {myDeps.length === 0 ? <p className="text-sm text-muted-foreground">Sin dependencias</p> : (
                 <ul className="space-y-1">
                   {myDeps.map((d: any) => (
                     <li key={d.id} className="flex items-center justify-between text-sm p-2 border rounded">
-                      <span>{d.code} · {d.title}</span>
+                      <span>{d.code} · {resolveMilestoneContent(d).humanTitle}</span>
                       <Badge variant="outline">{STATUS_LABEL[d.status]}</Badge>
                     </li>
                   ))}
@@ -242,7 +284,7 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
                 <ul className="space-y-1">
                   {dependents.map((d: any) => (
                     <li key={d.id} className="flex items-center justify-between text-sm p-2 border rounded">
-                      <span>{d.code} · {d.title}</span>
+                      <span>{d.code} · {resolveMilestoneContent(d).humanTitle}</span>
                       <Badge variant="outline">{STATUS_LABEL[d.status]}</Badge>
                     </li>
                   ))}
@@ -252,6 +294,9 @@ export function MilestoneDrawer({ milestoneId, onClose }: { milestoneId: string 
           </TabsContent>
 
           <TabsContent value="evidence" className="space-y-3 mt-4">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              Evidencia <InfoHint text={GLOSSARY["Evidencia"]} /> — prueba de que el milestone está hecho.
+            </p>
             <div className="space-y-2 p-3 border rounded-md">
               <Input placeholder="Etiqueta (ej: doc de scope firmado)" value={evidenceLabel} onChange={(e) => setEvidenceLabel(e.target.value)} />
               <Input placeholder="https://..." value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} />

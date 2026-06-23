@@ -6,6 +6,7 @@ import {
   SEED_COMPLIANCE_METRICS,
   SEED_INITIAL_PROGRESS,
 } from "@/lib/seedData";
+import { MILESTONE_CONTENT } from "@/lib/milestoneContent";
 import { addDays, format } from "date-fns";
 
 export type SeedOptions = {
@@ -69,6 +70,7 @@ export async function seedWorkspace(opts: SeedOptions) {
   const progressMap = new Map(SEED_INITIAL_PROGRESS.map((p) => [p.code, p]));
   const milestoneRows = SEED_MILESTONES.map((m) => {
     const initial = opts.applyInitialProgress ? progressMap.get(m.code) : undefined;
+    const content = MILESTONE_CONTENT[m.code];
     return {
       workspace_id: workspaceId,
       workstream_id: wsCodeToId.get(m.workstream)!,
@@ -87,6 +89,14 @@ export async function seedWorkspace(opts: SeedOptions) {
         | "in_progress"
         | "in_validation",
       source_document: initial?.source_document ?? m.source_document ?? null,
+      // Copy humano (claridad operativa). Si falta en el mapa, el UI cae al fallback por code.
+      human_title: content?.human_title ?? null,
+      short_description: content?.short_description ?? null,
+      simple_explanation: content?.simple_explanation ?? null,
+      expected_output: content?.expected_output ?? null,
+      unlocks_decision: content?.unlocks_decision ?? null,
+      examples: content?.examples ?? [],
+      success_criteria: content?.success_criteria ?? [],
     };
   });
 

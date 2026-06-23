@@ -348,6 +348,13 @@ export type Database = {
           updated_at: string
           week_target: number
           why_it_matters: string | null
+          human_title: string | null
+          short_description: string | null
+          simple_explanation: string | null
+          expected_output: string | null
+          unlocks_decision: string | null
+          examples: Json
+          success_criteria: Json
           workspace_id: string
           workstream_id: string
         }
@@ -378,6 +385,13 @@ export type Database = {
           updated_at?: string
           week_target?: number
           why_it_matters?: string | null
+          human_title?: string | null
+          short_description?: string | null
+          simple_explanation?: string | null
+          expected_output?: string | null
+          unlocks_decision?: string | null
+          examples?: Json
+          success_criteria?: Json
           workspace_id: string
           workstream_id: string
         }
@@ -408,6 +422,13 @@ export type Database = {
           updated_at?: string
           week_target?: number
           why_it_matters?: string | null
+          human_title?: string | null
+          short_description?: string | null
+          simple_explanation?: string | null
+          expected_output?: string | null
+          unlocks_decision?: string | null
+          examples?: Json
+          success_criteria?: Json
           workspace_id?: string
           workstream_id?: string
         }

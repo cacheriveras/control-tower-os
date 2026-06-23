@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { STATUS_LABEL } from "@/lib/format";
+import { resolveMilestoneContent, workstreamLabel } from "@/lib/milestoneContent";
 import { MilestoneDrawer } from "@/components/MilestoneDrawer";
 
 export default function Workstreams() {
@@ -44,7 +45,7 @@ export default function Workstreams() {
                 <Badge variant="outline" className="text-xs">{ws.code}</Badge>
                 <span className="text-xs text-muted-foreground">peso {Number(ws.weight).toFixed(1)}</span>
               </div>
-              <h3 className="font-display text-lg leading-tight mb-2">{ws.name}</h3>
+              <h3 className="font-display text-lg leading-tight mb-2">{workstreamLabel(ws)}</h3>
               <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{ws.description}</p>
               <div className="flex justify-between text-xs mb-1.5"><span>Progreso</span><span className="text-muted-foreground">{p}%</span></div>
               <Progress value={p} />
@@ -64,21 +65,21 @@ export default function Workstreams() {
             <>
               <SheetHeader>
                 <Badge variant="outline" className="w-fit">{openWs.code}</Badge>
-                <SheetTitle className="font-display text-2xl">{openWs.name}</SheetTitle>
+                <SheetTitle className="font-display text-2xl">{workstreamLabel(openWs)}</SheetTitle>
                 <p className="text-sm text-muted-foreground">{openWs.description}</p>
               </SheetHeader>
               <div className="mt-4 space-y-2">
                 {openMs.map((m) => (
                   <button key={m.id} onClick={() => setOpenMsId(m.id)} className="w-full text-left p-3 border rounded-lg hover:border-primary/40">
                     <div className="flex justify-between items-start gap-2">
-                      <span className="text-sm font-medium">{m.code} · {m.title}</span>
-                      <div className="flex gap-1">
+                      <span className="text-sm font-medium">{resolveMilestoneContent(m).humanTitle}</span>
+                      <div className="flex gap-1 shrink-0">
                         <Badge variant="outline" className="text-[10px]">{m.priority}</Badge>
                         {m.is_launch_gate && <Badge className="bg-gold text-gold-foreground text-[10px]">Gate</Badge>}
                       </div>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>Semana {m.week_target} · {STATUS_LABEL[m.status]}</span>
+                      <span>{m.code} · Semana {m.week_target} · {STATUS_LABEL[m.status]}</span>
                       <span>{m.progress}%</span>
                     </div>
                     <Progress value={m.progress} className="mt-2 h-1.5" />

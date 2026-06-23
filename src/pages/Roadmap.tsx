@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useMilestones, useWorkstreams } from "@/hooks/useData";
 import { PHASES } from "@/lib/seedData";
+import { phaseBlurb, resolveMilestoneContent } from "@/lib/milestoneContent";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,7 +36,10 @@ export default function Roadmap() {
       <div className="space-y-6">
         {PHASES.map((phase) => (
           <section key={phase.name}>
-            <h2 className="font-display text-xl mb-3">{phase.name} <span className="text-muted-foreground text-sm font-sans ml-2">Semanas {phase.weeks.join("–")}</span></h2>
+            <div className="mb-3">
+              <h2 className="font-display text-xl">{phase.name} <span className="text-muted-foreground text-sm font-sans ml-2">Semanas {phase.weeks.join("–")}</span></h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{phaseBlurb(phase.weeks)}</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {phase.weeks.map((w) => {
                 const ms = milestones.filter((m) => m.week_target === w);
@@ -53,8 +57,8 @@ export default function Roadmap() {
                           <div key={m.id} className="rounded-md border p-3 hover:border-primary/40 transition group bg-card">
                             <div className="flex justify-between gap-2 items-start">
                               <button onClick={() => setOpenId(m.id)} className="text-left flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{m.code} · {m.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 truncate">{ws?.code} · {STATUS_LABEL[m.status]}</p>
+                                <p className="text-sm font-medium truncate">{resolveMilestoneContent(m).humanTitle}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.code} · {ws?.code} · {STATUS_LABEL[m.status]}</p>
                               </button>
                               <div className="flex flex-col gap-1 items-end">
                                 <div className="flex gap-1">
