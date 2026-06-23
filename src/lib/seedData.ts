@@ -155,5 +155,5 @@ export const PHASES = [
 ] as const;
 
 export function phaseForWeek(week: number) {
-  return PHASES.find((p) => p.weeks.includes(week)) ?? PHASES[0];
+  return PHASES.find((p) => (p.weeks as readonly number[]).includes(week)) ?? PHASES[0];
 }
