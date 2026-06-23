@@ -1,105 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
+/* Aesthetic Dental RevenueOS — Premium Control Tower design system */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Surfaces */
+    --background: 40 30% 96%;          /* ivory #F7F4EE */
+    --surface: 40 35% 98%;
+    --surface-elevated: 0 0% 100%;
+    --foreground: 211 75% 11%;          /* deep navy text */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 211 75% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 211 75% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand */
+    --primary: 180 84% 36%;             /* teal #0FA9A8 */
+    --primary-foreground: 40 35% 98%;
+    --primary-soft: 180 50% 92%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --navy: 211 75% 11%;                /* #061B33 */
+    --navy-foreground: 40 35% 98%;
+    --navy-soft: 211 50% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --gold: 36 64% 48%;                 /* #C8962E */
+    --gold-foreground: 40 35% 98%;
+    --gold-soft: 36 70% 92%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 211 30% 94%;
+    --secondary-foreground: 211 75% 11%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 211 25% 38%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --accent: 180 50% 92%;
+    --accent-foreground: 180 84% 22%;
 
-    --radius: 0.5rem;
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 40 35% 98%;
 
-    --sidebar-background: 0 0% 98%;
+    --success: 152 58% 38%;
+    --success-foreground: 40 35% 98%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --warning: 36 80% 50%;
+    --warning-foreground: 40 35% 98%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --border: 40 15% 86%;
+    --border-strong: 40 15% 78%;
+    --input: 40 15% 86%;
+    --ring: 180 84% 36%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --radius: 0.75rem;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Gradients & shadows */
+    --gradient-navy: linear-gradient(180deg, hsl(211 75% 11%) 0%, hsl(211 70% 16%) 100%);
+    --gradient-teal: linear-gradient(135deg, hsl(180 84% 36%) 0%, hsl(180 70% 28%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(36 70% 55%) 0%, hsl(36 64% 42%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(40 35% 98%) 0%, hsl(40 30% 95%) 100%);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --shadow-elegant: 0 1px 2px hsl(211 50% 11% / 0.04), 0 8px 24px -8px hsl(211 50% 11% / 0.08);
+    --shadow-card: 0 1px 2px hsl(211 50% 11% / 0.03), 0 2px 8px -2px hsl(211 50% 11% / 0.06);
+    --shadow-focus: 0 0 0 3px hsl(180 84% 36% / 0.18);
+    --shadow-gold: 0 8px 24px -8px hsl(36 64% 48% / 0.35);
 
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 211 75% 11%;
+    --sidebar-foreground: 40 35% 92%;
+    --sidebar-primary: 180 84% 46%;
+    --sidebar-primary-foreground: 211 75% 11%;
+    --sidebar-accent: 211 60% 18%;
+    --sidebar-accent-foreground: 40 35% 98%;
+    --sidebar-border: 211 50% 18%;
+    --sidebar-ring: 180 84% 46%;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
 
+  html, body, #root {
+    height: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+
+  h1, h2, h3, .display {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-xl border bg-card shadow-[var(--shadow-card)];
+  }
+  .surface-elevated {
+    @apply rounded-2xl border bg-card shadow-[var(--shadow-elegant)];
+  }
+  .gradient-navy { background: var(--gradient-navy); }
+  .gradient-teal { background: var(--gradient-teal); }
+  .gradient-gold { background: var(--gradient-gold); }
+  .text-navy { color: hsl(var(--navy)); }
+  .bg-navy { background-color: hsl(var(--navy)); }
+  .text-gold { color: hsl(var(--gold)); }
+  .bg-gold { background-color: hsl(var(--gold)); }
+  .pulse-ring {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5);
+    animation: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.45); }
+    70% { box-shadow: 0 0 0 14px hsl(var(--primary) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  }
+  .fade-in { animation: fade-in 0.4s ease-out both; }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
