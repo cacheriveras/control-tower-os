@@ -331,7 +331,10 @@ export type Database = {
           description: string | null
           due_date: string | null
           effort: Database["public"]["Enums"]["effort_size"] | null
+          examples: string[]
+          expected_output: string | null
           focus_pinned: boolean
+          human_title: string | null
           id: string
           is_launch_gate: boolean
           next_action: string | null
@@ -340,11 +343,15 @@ export type Database = {
           progress: number
           requires_professional: Database["public"]["Enums"]["requires_professional"]
           risk_level: Database["public"]["Enums"]["risk_level"]
+          short_description: string | null
+          simple_explanation: string | null
           snoozed_until: string | null
           source_document: string | null
           source_reference: string | null
           status: Database["public"]["Enums"]["milestone_status"]
+          success_criteria: string[]
           title: string
+          unlocks_decision: string | null
           updated_at: string
           week_target: number
           why_it_matters: string | null
@@ -361,7 +368,10 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           effort?: Database["public"]["Enums"]["effort_size"] | null
+          examples?: string[]
+          expected_output?: string | null
           focus_pinned?: boolean
+          human_title?: string | null
           id?: string
           is_launch_gate?: boolean
           next_action?: string | null
@@ -370,11 +380,15 @@ export type Database = {
           progress?: number
           requires_professional?: Database["public"]["Enums"]["requires_professional"]
           risk_level?: Database["public"]["Enums"]["risk_level"]
+          short_description?: string | null
+          simple_explanation?: string | null
           snoozed_until?: string | null
           source_document?: string | null
           source_reference?: string | null
           status?: Database["public"]["Enums"]["milestone_status"]
+          success_criteria?: string[]
           title: string
+          unlocks_decision?: string | null
           updated_at?: string
           week_target?: number
           why_it_matters?: string | null
@@ -391,7 +405,10 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           effort?: Database["public"]["Enums"]["effort_size"] | null
+          examples?: string[]
+          expected_output?: string | null
           focus_pinned?: boolean
+          human_title?: string | null
           id?: string
           is_launch_gate?: boolean
           next_action?: string | null
@@ -400,11 +417,15 @@ export type Database = {
           progress?: number
           requires_professional?: Database["public"]["Enums"]["requires_professional"]
           risk_level?: Database["public"]["Enums"]["risk_level"]
+          short_description?: string | null
+          simple_explanation?: string | null
           snoozed_until?: string | null
           source_document?: string | null
           source_reference?: string | null
           status?: Database["public"]["Enums"]["milestone_status"]
+          success_criteria?: string[]
           title?: string
+          unlocks_decision?: string | null
           updated_at?: string
           week_target?: number
           why_it_matters?: string | null
